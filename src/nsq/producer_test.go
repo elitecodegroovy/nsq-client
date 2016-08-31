@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
-	"net"
+	//"net"
 	"os"
 	"runtime"
 	"strconv"
@@ -41,9 +41,9 @@ func (h *ConsumerHandler) HandleMessage(message *Message) error {
 
 func TestProducerConnection(t *testing.T) {
 	config := NewConfig()
-	laddr := "192.168.235.92"
-
-	config.LocalAddr, _ = net.ResolveTCPAddr("tcp", laddr+":0")
+	//laddr := "192.168.235.92"
+	//
+	//config.LocalAddr, _ = net.ResolveTCPAddr("tcp", laddr+":0")
 
 	w, _ := NewProducer("192.168.235.92:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
