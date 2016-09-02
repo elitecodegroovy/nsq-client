@@ -142,6 +142,7 @@ func TestConsumerTLSClientCertViaSet(t *testing.T) {
 	})
 }
 
+
 func consumerTest(t *testing.T, cb func(c *Config)) {
 	config := NewConfig()
 	laddr := "192.168.235.92"

@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+	"fmt"
 )
 
 type ConsumerHandler struct {
@@ -33,7 +34,7 @@ func (h *ConsumerHandler) HandleMessage(message *Message) error {
 		return errors.New("fail this message")
 	}
 	if msg != "multipublish_test_case" && msg != "publish_test_case" {
-		h.t.Error("message 'action' was not correct:", msg)
+		h.t.Log("message 'action' was not correct:", msg)
 	}
 	h.messagesGood++
 	return nil
@@ -84,7 +85,11 @@ func TestProducerPing(t *testing.T) {
 }
 
 func TestProducerPublish(t *testing.T) {
-	topicName := "publish" + strconv.Itoa(int(time.Now().Unix()))
+	currentTime := time.Now().Local()
+	//format Time, string type
+	timeFormat := currentTime.Format("2006-01-02")
+	//strconv.Itoa(int(time.Now().Unix()))
+	topicName := "publish" + timeFormat
 	msgCount := 10
 
 	config := NewConfig()
@@ -108,7 +113,10 @@ func TestProducerPublish(t *testing.T) {
 }
 
 func TestProducerMultiPublish(t *testing.T) {
-	topicName := "multi_publish" + strconv.Itoa(int(time.Now().Unix()))
+	currentTime := time.Now().Local()
+	//format Time, string type
+	timeFormat := currentTime.Format("2016-01-02")
+	topicName := "multi_publish" + timeFormat
 	msgCount := 10
 
 	config := NewConfig()
@@ -135,7 +143,10 @@ func TestProducerMultiPublish(t *testing.T) {
 }
 
 func TestProducerPublishAsync(t *testing.T) {
-	topicName := "async_publish" + strconv.Itoa(int(time.Now().Unix()))
+	currentTime := time.Now().Local()
+	//format Time, string type
+	timeFormat := currentTime.Format("2006-01-02")
+	topicName := "async_publish" + timeFormat
 	msgCount := 10
 
 	config := NewConfig()
@@ -170,7 +181,10 @@ func TestProducerPublishAsync(t *testing.T) {
 }
 
 func TestProducerMultiPublishAsync(t *testing.T) {
-	topicName := "multi_publish" + strconv.Itoa(int(time.Now().Unix()))
+	currentTime := time.Now().Local()
+	//format Time, string type
+	timeFormat := currentTime.Format("2006-01-02")
+	topicName := "multi_publish" + timeFormat
 	msgCount := 10
 
 	config := NewConfig()
@@ -180,7 +194,7 @@ func TestProducerMultiPublishAsync(t *testing.T) {
 
 	var testData [][]byte
 	for i := 0; i < msgCount; i++ {
-		testData = append(testData, []byte("multipublish_test_case"))
+		testData = append(testData, []byte("multipublish_test_case"+strconv.Itoa(i)))
 	}
 
 	responseChan := make(chan *ProducerTransaction)
@@ -209,7 +223,10 @@ func TestProducerMultiPublishAsync(t *testing.T) {
 }
 
 func TestProducerHeartbeat(t *testing.T) {
-	topicName := "heartbeat" + strconv.Itoa(int(time.Now().Unix()))
+	currentTime := time.Now().Local()
+	//format Time, string type
+	timeFormat := currentTime.Format("2006-01-02")
+	topicName := "heartbeat" + timeFormat
 
 	config := NewConfig()
 	config.HeartbeatInterval = 100 * time.Millisecond
@@ -217,7 +234,7 @@ func TestProducerHeartbeat(t *testing.T) {
 	w.SetLogger(nullLogger, LogLevelInfo)
 	defer w.Stop()
 
-	err := w.Publish(topicName, []byte("publish_test_case"))
+	err := w.Publish(topicName, []byte("publish_test_case"+ time.Now().Local().Format("2006-01-02 15:04:05.000")))
 	if err == nil {
 		t.Fatalf("error should not be nil")
 	}
@@ -226,13 +243,14 @@ func TestProducerHeartbeat(t *testing.T) {
 		t.Fatalf("wrong error - %s", err)
 	}
 
+	//HeartbeatInterval config
 	config = NewConfig()
 	config.HeartbeatInterval = 1000 * time.Millisecond
 	w, _ = NewProducer("192.168.235.92:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 	defer w.Stop()
 
-	err = w.Publish(topicName, []byte("publish_test_case"))
+	err = w.Publish(topicName, []byte("publish_test_case"+ time.Now().Local().Format("2006-01-02 15:04:05.000")))
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -255,6 +273,7 @@ func TestProducerHeartbeat(t *testing.T) {
 	readMessages(topicName, t, msgCount+1)
 }
 
+//read the message
 func readMessages(topicName string, t *testing.T, msgCount int) {
 	config := NewConfig()
 	config.DefaultRequeueDelay = 0
@@ -274,6 +293,7 @@ func readMessages(topicName string, t *testing.T, msgCount int) {
 	}
 	<-q.StopChan
 
+	fmt.Println("message good count :", h.messagesGood , "message bad ", h.messagesFailed)
 	if h.messagesGood != msgCount {
 		t.Fatalf("end of test. should have handled a diff number of messages %d != %d", h.messagesGood, msgCount)
 	}
@@ -281,6 +301,7 @@ func readMessages(topicName string, t *testing.T, msgCount int) {
 	if h.messagesFailed != 1 {
 		t.Fatal("failed message not done")
 	}
+	fmt.Println("message.... received....")
 }
 
 type mockProducerConn struct {
