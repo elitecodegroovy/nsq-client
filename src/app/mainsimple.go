@@ -379,6 +379,7 @@ func doChan(){
 	fmt.Println("received two ", <- message2)
 
 	doChanSync()
+	doChanDirection()
 }
 //This is the function we’ll run in a goroutine. The done channel will be used to
 // notify another goroutine that this function’s work is done.
@@ -395,6 +396,10 @@ func doAsWorker(done chan bool){
 	time.Sleep(time.Second)
 	fmt.Println("done!")
 	done <- true
+}
+
+func doChanDirection(){
+
 }
 
 func doConcurrent(){
