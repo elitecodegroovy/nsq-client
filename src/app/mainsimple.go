@@ -14,6 +14,7 @@ import (
 	"math/rand"
 	"sort"
 	"regexp"
+	"encoding/json"
 )
 //Go’s mechanism for grouping and naming related sets of methods: interfaces.
 
@@ -1045,12 +1046,91 @@ func doRegexp(){
 	doMatch()
 	doCompile()
 }
+
+func doBasicTime(){
+	now := time.Now()
+	secs := now.Unix()
+	nanos := now.UnixNano()
+	fmt.Println(now)
+
+	millis := nanos / 1000000
+	fmt.Println(secs)
+	fmt.Println(millis)
+	fmt.Println(nanos)
+
+	//You can also convert integer seconds or nanoseconds
+	//since the epoch into the corresponding time.
+	fmt.Println(time.Unix(secs, 0))
+	fmt.Println(time.Unix(0, nanos))
+}
+
+type Response1 struct {
+	Page   int
+	Fruits []string
+}
+type Response2 struct {
+	Page   int      `json:"page"`
+	Fruits []string `json:"fruits"`
+}
+func doJson(){
+	bValue, _:= json.Marshal(true)
+	fmt.Println("bool value:", string(bValue))
+
+	intB, _ := json.Marshal(1)
+	fmt.Println(string(intB))
+
+	slcD := []string{"apple", "peach", "pear"}
+	slcB, _ := json.Marshal(slcD)
+	fmt.Println(string(slcB))
+
+	mapD := map[string]int{"apple": 5, "lettuce": 7}
+	mapB, _ := json.Marshal(mapD)
+	fmt.Println(string(mapB))
+
+	res1D := &Response1{
+		Page:   1,
+		Fruits: []string{"apple", "peach", "pear"}}
+	res1B, _ := json.Marshal(res1D)
+	fmt.Println(string(res1B))
+
+	//response 2 json output
+	res2D := &Response2{
+		Page:   1,
+		Fruits: []string{"apple", "peach", "pear"}}
+	res2B, _ := json.Marshal(res2D)
+	fmt.Println(string(res2B))
+
+	byt := []byte(`{"num":6.13,"strs":["a","b"]}`)
+	var dat map[string]interface{}
+	if err := json.Unmarshal(byt, &dat); err != nil {
+		panic(err)
+	}
+	fmt.Println("unmarshal entity :", dat)
+
+	num := dat["num"].(float64)
+	fmt.Println(num)
+
+	str := `{"page": 1, "fruits": ["apple", "peach"]}`
+	res := Response2{}
+	json.Unmarshal([]byte(str), &res)
+	fmt.Println(res)
+	fmt.Println(res.Fruits[0])
+
+	//json output
+	enc := json.NewEncoder(os.Stdout)
+	d := map[string]int{"apple": 5, "lettuce": 7}
+	enc.Encode(d)
+
+	//time opr
+	doBasicTime()
+}
 func main() {
 	doSimple()
 	//doConcurrent()
 	//doTimer()
-	doSort()
-	doRegexp()
+	//doSort()
+	//doRegexp()
+	doJson()
 }
 
 
