@@ -7,6 +7,13 @@ import (
 	"time"
 	"math"
 	"errors"
+	"strconv"
+	"sync/atomic"
+	"runtime"
+	"sync"
+	"math/rand"
+	"sort"
+	"regexp"
 )
 //Go’s mechanism for grouping and naming related sets of methods: interfaces.
 
@@ -398,18 +405,652 @@ func doAsWorker(done chan bool){
 	done <- true
 }
 
-func doChanDirection(){
+func p(ping chan string, msg string){
+	ping <- msg
+}
 
+func q(ping chan string, pong chan string){
+	msg := <- ping
+	pong <- msg
+}
+
+//The pong function accepts one channel for receives (pings) and a second for sends (pongs).
+func doChanDirection(){
+	pings := make(chan string, 1)
+	pongs := make(chan string, 1)
+	p(pings, "go channel direction")
+	q(pings, pongs)
+	fmt.Println(<-pongs)
+}
+
+// Go’s select lets you wait on multiple channel operations.
+//Combining goroutines and channels with select is a powerful feature of Go.
+func doSelect(){
+	t1 := time.Now() // get current time
+
+	x1 := make(chan string )
+	x2 := make(chan string)
+
+	go func(){
+		time.Sleep(time.Second * 1)
+		x1 <- "ping"
+	}()
+
+	go func(){
+		time.Sleep(time.Second * 2)
+		x2 <- "pong"
+	}()
+	for i:= 0; i < 2; i++ {
+		select {
+		case msg := <- x1:
+			fmt.Println("msg x1:", msg)
+		case msg := <- x2:
+			fmt.Println("msg x2:", msg)
+		}
+	}
+	elapsed := time.Since(t1)
+	//Note that the total execution time is only ~2 seconds since both the 1 and 2 second Sleeps execute concurrently.
+	fmt.Println("App elapsed: ", elapsed)
+}
+//Using this select timeout pattern requires communicating results over channels. This is a good idea in general because
+// other important Go features are based on channels and select.
+func doTimeout(){
+	x1 := make(chan string, 1)
+	go func(){
+		time.Sleep(time.Second * 1)
+		x1 <- "get resource x1"
+	}()
+	select {
+	case msg := <- x1:
+		fmt.Println("get result ", msg)
+	case <- time.After(time.Second * 1):
+		fmt.Println("get timeout after 1 second")
+	}
+
+	x2 := make(chan string ,1)
+	go func(){
+		time.Sleep(time.Second * 2)
+		x2 <- "get resource x2"
+	}()
+	select {
+	case msg := <- x2:
+		fmt.Println("get result x2:", msg)
+	case <- time.After(time.Second * 3):
+		fmt.Println("get timeout after 3 seconds")
+	}
+}
+
+func doNotblockChan(){
+	messages := make(chan string)
+	signals := make(chan bool)
+
+	select {
+	case msg := <- messages:
+		fmt.Println("received message :", msg)
+	default:
+		fmt.Println("no message received")
+	}
+
+	msg := "hi"
+	select {
+	case messages <- msg:
+		fmt.Println("sent message", msg)
+	default:
+		fmt.Println("no message sent")
+	}
+
+	select {
+	case msg := <-messages:
+		fmt.Println("received message", msg)
+	case sig := <-signals:
+		fmt.Println("received signal", sig)
+	default:
+		fmt.Println("no activity")
+	}
+}
+
+func closeChan(){
+	jobs := make(chan int, 5)
+	done := make(chan bool)
+
+	go func(){
+		for {
+			job, more := <- jobs
+			if more {
+				fmt.Println("received job", job)
+			} else {
+				fmt.Println("received all jobs")
+				done <- true
+				return
+			}
+		}
+	}()
+
+	for i :=1; i <= 3; i++ {
+		jobs <- i
+		fmt.Println("sent msg:", i)
+	}
+	close(jobs)
+	<- done
+}
+
+func doChanRange(){
+	queue := make(chan string, 2)
+	queue <- "two"
+	queue <- "three"
+	close(queue)
+	for elem:= range queue {
+		fmt.Println("e in queue :", elem)
+	}
 }
 
 func doConcurrent(){
 	doGo()
 	doChan()
+	doSelect()
+	doTimeout()
+	doNotblockChan()
+	closeChan()
+	doChanRange()
 }
 
+//If you just wanted to wait, you could have used time.Sleep.
+// One reason a timer may be useful is that you can cancel
+// the timer before it expires. Here’s an example of that.
+func doTime(){
+	timer1 := time.NewTimer(time.Second * 1)
+	<- timer1.C
+	fmt.Println("Timer 1 expired")
+
+	timer2 := time.NewTimer(time.Second * 2)
+	go func(){
+		<- timer2.C
+		fmt.Println("timer2 expired!")
+	}()
+
+	stop2 := timer2.Stop()
+	if stop2 {
+		fmt.Println("Timer 2 stopped")
+	}
+}
+// Timers are for when you want to do something once in the future - tickers are for
+// when you want to do something repeatedly at regular intervals.
+func doTicker(){
+	ticker := time.NewTicker(time.Millisecond * 500)
+
+	go func(){
+		for t := range ticker.C {
+			fmt.Println("ticker transaction :", t.Format("2006-01-02 15:00:00.0000"))
+		}
+	}()
+	time.Sleep(time.Millisecond * 1600)
+	ticker.Stop()
+	fmt.Println("ticker stopped!")
+}
+
+func doTask(id int, jobs <- chan int, results chan <-  int){
+	for j := range jobs {
+		fmt.Println("worker", id, "processing job", j)
+		//time.Sleep(time.Millisecond * 100)
+		results <- j * 2
+	}
+}
+
+func doWorkerPool(){
+	jobs := make(chan int , 100)
+	results := make(chan int, 100)
+
+	for i := 0; i < 3; i++ {
+		go doTask(i, jobs, results)
+	}
+	for j := 1; j < 10; j++ {
+		jobs <- j
+	}
+	close(jobs)
+	for a := 1; a <= 9; a++ {
+		fmt.Println("result ", <-results)
+	}
+	//How to get the each job result.
+}
+
+//Rate limiting is an important mechanism for controlling resource utilization and maintaining
+// quality of service. Go elegantly supports rate limiting with goroutines, channels, and tickers.
+func doRateLimiting(){
+	requests := make(chan string, 3)
+	for i:=1; i < 4; i++ {
+		requests <- strconv.Itoa(i)
+	}
+	close(requests)
+	limiter := time.Tick(time.Millisecond * 200)
+	for req := range requests {
+		<- limiter
+		fmt.Println("req", req, ", time:", time.Now().Local().Format("2006-01-02 15:04:05.0000"))
+	}
+
+	//upgrade version
+	burstyLimiter := make(chan time.Time, 3)
+
+	for i := 0; i < 3; i++ {
+		burstyLimiter <- time.Now()
+	}
+
+	go func() {
+		for t := range time.Tick(time.Millisecond * 200) {
+			burstyLimiter <- t
+		}
+	}()
+
+	//
+	burstyRequests := make(chan int, 5)
+	for i := 1; i <= 5; i++ {
+		burstyRequests <- i
+	}
+	close(burstyRequests)
+	for req := range burstyRequests {
+		<-burstyLimiter
+		fmt.Println("request", req, ", time ", time.Now().Format("2006-01-02 15:04:05.0000"))
+	}
+}
+
+func doMutex(){
+	state := make(map[int]int)
+	var mutex  = &sync.Mutex{}
+	var ops uint64 = 0
+
+	for i:=0; i < 100; i++ {
+		go func(){
+			total := 0
+			key := rand.Intn(5)
+			mutex.Lock()
+			total += state[key]
+			mutex.Unlock()
+			atomic.AddUint64(&ops, 1)
+			runtime.Gosched()
+
+		}()
+	}
+	for w:=0; w < 10; w++ {
+		go func(){
+			key := rand.Intn(5)
+			val := rand.Intn(10)
+			mutex.Lock()
+			state[key] = val
+			mutex.Unlock()
+			atomic.AddUint64(&ops, 1)
+			runtime.Gosched()
+		}()
+	}
+	time.Sleep(time.Second)
+
+	mutex.Lock()
+	fmt.Println("state :", state)
+	mutex.Unlock()
+	fmt.Println("show me count :", atomic.LoadUint64(&ops))
+}
+func doSyncCount(){
+	var op uint64 = 0
+	for i:= 0; i < 60; i++ {
+		go func(){
+			atomic.AddUint64(&op, 1)
+			runtime.Gosched()
+		}()
+	}
+	time.Sleep(time.Second)
+	fmt.Println(atomic.LoadUint64(&op))
+
+	doMutex()
+}
+//Stateful Goroutines
+// This channel-based approach aligns with Go’s ideas of sharing memory
+// by communicating and having each piece of data owned by exactly 1 goroutine.
+
+type readOp struct {
+	key int
+	resp chan int
+}
+
+type writeOp struct {
+	key int
+	val int
+	resp chan bool
+}
+func doStatefulGorutines(){
+	var ops uint64 = 0
+	reads := make(chan *readOp)
+	writes := make(chan *writeOp)
+
+	go func(){
+		var state = make(map[int]int)
+		for {
+			select {
+			case read := <- reads:
+				read.resp <- state[read.key]
+			case write := <- writes:
+				state[write.key] = write.val
+				write.resp <- true
+			}
+		}
+	}()
+	// 100 reads
+	for r:=0 ; r < 10; r++ {
+		go func(){
+			for {
+				read := &readOp{
+					key: rand.Intn(5),
+					resp: make(chan int),
+				}
+				reads <- read
+				fmt.Println("get read chan response :", <- read.resp)
+				atomic.AddUint64(&ops, 1)
+			}
+		}()
+	}
+
+	//10 writers
+	for w :=0; w < 1; w++ {
+		go func(){
+			for{
+				write := &writeOp {
+					key: rand.Intn(5),
+					val: rand.Intn(1000),
+					resp:make(chan bool),
+				}
+				writes <- write
+				<- write.resp
+				atomic.AddUint64(&ops, 1)
+			}
+
+		}()
+	}
+	time.Sleep(time.Millisecond * 10)
+	fmt.Println("ops:", atomic.LoadUint64(&ops))
+}
+func doTimer(){
+	doTime()
+	doTicker()
+	doWorkerPool()
+	doRateLimiting()
+	doSyncCount()
+	doStatefulGorutines()
+}
+func doSimpleSort(){
+	strs := []string{"c", "a", "z"}
+	sort.Strings(strs)
+	fmt.Println("sorting []strings", strs)
+
+	ints := []int {3, 1, 9, 12, 0}
+	sort.Ints(ints)
+
+
+	s := sort.IntsAreSorted(ints)
+	fmt.Println("soring []ints", ints, ", sorted :", s)
+}
+
+type ByLength []string
+
+func (s ByLength)Len() int{
+	return len(s)
+}
+
+func (s ByLength)Swap(i, j int) {
+	s[i], s[j] = s[j], s[j]
+}
+
+func (s ByLength)Less(i, j int)bool {
+	return len(s[i]) > len(s[j])
+}
+
+func sortByLength(){
+	fruits := []string{"peach", "banana", "kiwi"}
+	sort.Sort(ByLength(fruits))
+	fmt.Println(fruits)
+}
+func doSort(){
+	doSimpleSort()
+	sortByLength()
+	doPanic()
+	doDefer()
+	doCollectionFunc()
+}
+
+//A panic typically means something went unexpectedly wrong.
+func doPanic(){
+	//panic("a problem")
+	//_, err := os.Create("/tmp/file")
+	//if err != nil {
+	//	panic(err)
+	//}
+}
+
+//defer is often used where e.g. ensure and finally would be used in other languages.
+
+func doDefer(){
+	f := createFile("./defer.txt")
+	defer closeFile(f)
+	writeFile(f)
+}
+func createFile(p string) *os.File {
+	f, err := os.Create(p)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
+func writeFile(f *os.File) {
+	for i := 1; i <101; i++ {
+		if i % 10 == 0 {
+			fmt.Fprint(f, "*\n")
+		}else {
+			fmt.Fprint(f, "*")
+		}
+
+	}
+}
+func closeFile(f *os.File) {
+	f.Close()
+}
+
+// Go does not support generics; in Go it’s common to provide collection functions
+// if and when they are specifically needed for your program and data types.
+
+func index(vs []string, t string) int {
+	for i, v := range vs {
+		if v == t {
+			return i
+		}
+	}
+	return -1
+}
+
+func include(vs []string, t string) bool {
+	return index(vs, t) > -1
+}
+
+func any(vs []string, f func(string)bool) bool {
+	for _, v := range vs {
+		if f(v){
+			return true
+		}
+	}
+	return false
+}
+
+func all(vs []string, f func(string)bool) bool {
+	for _, v := range vs {
+		if !f(v) {
+			return false
+		}
+	}
+	return true
+}
+
+func filter(vs []string, f func(string)bool) []string {
+	vsf := make([]string, 0)
+	for _, v := range vs {
+		if f(v) {
+			vsf = append(vsf, v)
+		}
+	}
+	return vsf
+}
+
+func doMap(vs []string, f func(string)string) []string {
+	vsm := make([]string, len(vs))
+	for i, v := range vs {
+		vsm[i] = f(v)
+	}
+	return vsm
+}
+
+//collect function
+func doCollectionFunc(){
+	var strs = []string{"peach", "apple", "pear", "plum"}
+
+	fmt.Println("get index 'pear'", index(strs, "pear"))
+	fmt.Println("inclue 'grape':", include(strs, "grape"))
+	fmt.Println("any hasPrefix ," , any(strs, func(v string )bool{
+		return strings.HasPrefix(v, "p")
+	}))
+	fmt.Println("...", all(strs, func(v string)bool {
+		return strings.HasPrefix(v, "p")
+	}))
+	fmt.Println("...filter", filter(strs,  func(v string) bool {
+		return strings.Contains(v, "e")
+	}))
+	fmt.Println("map string, ", doMap(strs, strings.ToUpper))
+	opString()
+}
+
+
+func opString(){
+	fmt.Println("Contains:  ", strings.Contains("test", "es"))
+	fmt.Println("Count:     ", strings.Count("test", "t"))
+	fmt.Println("HasPrefix: ", strings.HasPrefix("test", "te"))
+	fmt.Println("HasSuffix: ", strings.HasSuffix("test", "st"))
+	fmt.Println("Index:     ", strings.Index("test", "e"))
+	fmt.Println("Join:      ", strings.Join([]string{"a", "b"}, "-"))
+	fmt.Println("Repeat:    ", strings.Repeat("a", 5))
+	fmt.Println("Replace:   ", strings.Replace("foo", "o", "0", -1))
+	fmt.Println("Replace:   ", strings.Replace("foo", "o", "0", 1))
+	fmt.Println("Split:     ", strings.Split("a-b-c-d-e", "-"))
+	fmt.Println("ToLower:   ", strings.ToLower("TEST"))
+	fmt.Println("ToUpper:   ", strings.ToUpper("test"))
+	opStringFormat()
+}
+
+type point struct {
+	x, y int
+}
+
+func opStringFormat(){
+	p := point{1, 2}
+	fmt.Printf("%v\n", p)
+	//If the value is a struct, the %+v variant will include the struct’s field names.
+	fmt.Printf("%+v\n", p)
+	//he %#v variant prints a Go syntax representation of the value, i.e. the source code snippet that would produce that value.
+	fmt.Printf("%#v\n", p)
+	//print the type of a value, use %T.
+	fmt.Printf("%T\n", p)
+	//Formatting booleans is straight-forward.
+	fmt.Printf("%t\n", true)
+
+	//There are many options for formatting integers. Use %d for standard, base-10 formatting.
+	fmt.Printf("%d\n", 123)
+
+	//This prints a binary representation.
+	fmt.Printf("%b\n", 14)
+
+	//This prints the character corresponding to the given integer.
+	fmt.Printf("%c\n", 33)
+
+	//%x provides hex encoding.
+	fmt.Printf("%x\n", 456)
+
+	//There are also several formatting options for floats. For basic decimal formatting use %f.
+	fmt.Printf("%f\n", 78.9)
+
+	//%e and %E format the float in (slightly different versions of) scientific notation.
+	fmt.Printf("%e\n", 123400000.0)
+	fmt.Printf("%E\n", 123400000.0)
+
+	//For basic string printing use %s.
+	fmt.Printf("%s\n", "\"string\"")
+
+	//To double-quote strings as in Go source, use %q.
+	fmt.Printf("%q\n", "\"string\"")
+
+	//As with integers seen earlier, %x renders the string in base-16, with two output characters per byte of input.
+	fmt.Printf("%x\n", "hex this")
+
+	//To print a representation of a pointer, use %p.
+	fmt.Printf("%p\n", &p)
+
+	//When formatting numbers you will often want to control the width and precision of the resulting figure. To
+	// specify the width of an integer, use a number after the % in the verb. By default the result will be
+	// right-justified and padded with spaces
+	fmt.Printf("|%6d|%6d|\n", 12, 345)
+
+	//You can also specify the width of printed floats, though usually you’ll also want to restrict the
+	// decimal precision at the same time with the width.precision syntax
+	fmt.Printf("|%6.2f|%6.2f|\n", 1.2, 3.45)
+
+	//To left-justify, use the - flag.
+	fmt.Printf("|%-6.2f|%-6.2f|\n", 1.2, 3.45)
+
+	//You may also want to control width when formatting strings, especially to ensure that they
+	// align in table-like output. For basic right-justified width.
+	fmt.Printf("|%6s|%6s|\n", "foo", "b")
+
+	//To left-justify use the - flag as with numbers.
+	fmt.Printf("|%-6s|%-6s|\n", "foo", "b")
+
+	//So far we’ve seen Printf, which prints the formatted string to os.Stdout. Sprintf formats
+	// and returns a string without printing it anywhere.
+	fmt.Println(fmt.Sprintf("a %s", "string"))
+
+	//You can format+print to io.Writers other than os.Stdout using Fprintf.
+	fmt.Fprintf(os.Stderr, "an %s\n", "error")
+}
+
+// Go offers built-in support for regular expressions. Here are some examples of common regexp-related tasks in Go.
+func doMatch(){
+	isMatch, _ := regexp.MatchString("p([a-z]+)ch", "peach")
+	fmt.Println("go match, ", isMatch)
+}
+
+func doCompile(){
+	r, _ := regexp.Compile("p([a-z]+)ch")
+	fmt.Println("r.FindString", r.FindString("paech punch"))
+
+	fmt.Println("find string index", r.FindStringIndex("peach punch peach peach"))
+	fmt.Println("find submatch string", r.FindStringSubmatch("peach punch"))
+	fmt.Println("submatch string index", r.FindStringSubmatchIndex("peach punch"))
+	fmt.Println("find string, ", r.FindAllString("peach punch sinch", -1))
+	fmt.Println(r.Match([]byte("peach")))
+
+	r = regexp.MustCompile("p([a-z]+)ch")
+
+	fmt.Println(r.ReplaceAllString("a peach", "<fruit>"))
+
+	_in := []byte("a peach")
+	_out := r.ReplaceAllFunc(_in, func(s []byte) []byte {
+		// How can I access the capture group here?
+		return []byte(`<a href="/view/PageName">PageName</a>`)
+	})
+	fmt.Println(string(_out))
+	//_out = r.ReplaceAllFunc(_in, bytes.ToUpper)
+	//fmt.Println(string(_out))
+}
+func doRegexp(){
+	doMatch()
+	doCompile()
+}
 func main() {
 	doSimple()
-	doConcurrent()
+	//doConcurrent()
+	//doTimer()
+	doSort()
+	doRegexp()
 }
 
 
