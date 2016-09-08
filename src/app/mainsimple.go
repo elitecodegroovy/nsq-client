@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"encoding/json"
 )
+
 //Go’s mechanism for grouping and naming related sets of methods: interfaces.
 
 type user struct {
@@ -1131,7 +1132,11 @@ func main() {
 	//doSort()
 	//doRegexp()
 	doJson()
+	playPigGame()
 }
+
+
+
 
 
 
