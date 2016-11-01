@@ -1132,7 +1132,7 @@ func main() {
 	//doSort()
 	//doRegexp()
 	doJson()
-	playPigGame()
+	//playPigGame()
 }
 
 
