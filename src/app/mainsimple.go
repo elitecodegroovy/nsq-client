@@ -694,7 +694,7 @@ func doTicker(){
 
 	go func(){
 		for t := range ticker.C {
-			fmt.Println("ticker transaction :", t.Format("2006-01-02 15:00:00.0000"))
+			fmt.Println("ticker transaction :", t.Format("2006-01-02 15:04:05.0000"))
 		}
 	}()
 	time.Sleep(time.Millisecond * 1600)
@@ -713,15 +713,17 @@ func doTask(id int, jobs <- chan int, results chan <-  int){
 func doWorkerPool(){
 	jobs := make(chan int , 100)
 	results := make(chan int, 100)
+	const NUM = 100
 
 	for i := 0; i < 3; i++ {
 		go doTask(i, jobs, results)
 	}
-	for j := 1; j < 10; j++ {
+	for j := 1; j < NUM; j++ {
 		jobs <- j
 	}
 	close(jobs)
-	for a := 1; a <= 9; a++ {
+	//if you set the number 100, you will find the result is only one thread.
+	for a := 1; a < NUM; a++ {
 		fmt.Println("result ", <-results)
 	}
 	//How to get the each job result.
@@ -1271,12 +1273,12 @@ func doJson(){
 
 func main() {
 	doSimple()
-	//doConcurrent()
-	//doTimer()
-	//doSort()
-	//doRegexp()
+	doConcurrent()
+	doTimer()
+	doSort()
+	doRegexp()
 	doJson()
-	//playPigGame()
+	playPigGame()
 }
 
 
