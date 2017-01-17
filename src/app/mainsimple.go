@@ -1316,12 +1316,12 @@ func doJson(){
 }
 func main() {
 	doSimple()
-	//doConcurrent()
-	//doTimer()
-	//doSort()
-	//doRegexp()
-	//doJson()
-	//playPigGame()
+	doConcurrent()
+	doTimer()
+	doSort()
+	doRegexp()
+	doJson()
+	playPigGame()
 }
 
 
