@@ -15,6 +15,7 @@ import (
 	"sort"
 	"regexp"
 	"encoding/json"
+	"bytes"
 )
 const (
 	win            = 100 // The winning score in a game of Pig
@@ -232,7 +233,7 @@ func doError(){
 	}
 }
 
-
+// define the const string variable.
 const GOOD_FAQ string= "How do you know that？"
 
 func plus(x, y int) int{
@@ -254,6 +255,15 @@ func increaseInt()func() int{
 		return i
 	}
 }
+
+func initNplus2() func()int {
+	i := 0
+	return  func() int{
+		i += 2
+		return i
+	}
+}
+
 //Go supports recursive functions. Here’s a classic factorial example.
 func multipleN(n int) int{
 	if n== 1 {
@@ -305,9 +315,12 @@ func doCloure(){
 	fmt.Println("nextInt", nextInt())
 	fmt.Println("nextInt", nextInt())
 
+	nextPlus2 := initNplus2()
+	fmt.Println("nextPlus2: ", nextPlus2())
+	fmt.Println("nextPlus2: ", nextPlus2())
 	//recursive func
 	fmt.Println("recursive func 10*9*8...1 ", multipleN( 10))
-	doPoints()
+
 }
 
 // Variadic functions can be called with any number of trailing arguments.
@@ -357,7 +370,7 @@ func doArrange(){
 	//If you already have multiple args in a slice,
 	// apply them to a variadic function using func(slice...) like this.
 	fmt.Println("sum(nums): ", sum(nums...))
-	doCloure()
+
 }
 
 func doMaps(){
@@ -384,7 +397,7 @@ func doMaps(){
 	x := map[string]int{"return": 1, "rssult":0}
 	fmt.Println("map init:", x)
 
-	doArrange()
+
 }
 func doSlice(){
 	s:= make([]string, 3)
@@ -417,7 +430,7 @@ func doSlice(){
 
 	x = s[:2]
 	fmt.Println("s[2:]:", x)
-	doMaps()
+
 }
 
 func doArray(){
@@ -430,10 +443,10 @@ func doArray(){
 
 	b := [5]int{12, 13, 14, 15,17}
 	fmt.Println("b  value:", b)
-	doSlice()
+	doArrange()
 }
 
-func doSimple(){
+func doStr(){
 	who := "World!"
 	if len(os.Args) > 1 {
 		/* os.Args[0] is "hello" or "hello.exe" */
@@ -451,7 +464,40 @@ func doSimple(){
 	default:
 		fmt.Println("it's a weekday")
 	}
+	compareStringAppend4Buffer()
+	compareStringAppend4ArrayStr()
+}
+
+func compareStringAppend4Buffer(){
+	var buffer bytes.Buffer
+	for i:=0 ; i < 1000; i++ {
+		if i % 2 == 0 {
+			buffer.WriteString("0")
+		} else {
+			buffer.WriteString("1")
+		}
+	}
+	fmt.Println("\n"+ buffer.String())
+}
+
+func compareStringAppend4ArrayStr(){
+	s := []string{}
+	for i := 0; i < 1000; i++ {
+		if i % 2 == 0 {
+			s = append(s, "0")
+		} else {
+			s = append(s, "1")
+		}
+	}
+	fmt.Println("\n"+ strings.Join(s, ""))
+}
+func doSimple(){
+	doStr()
 	doArray()
+	doSlice()
+	doMaps()
+	doCloure()
+	doPoints()
 }
 
 // A goroutine is a lightweight thread of execution.
@@ -694,7 +740,7 @@ func doTicker(){
 
 	go func(){
 		for t := range ticker.C {
-			fmt.Println("ticker transaction :", t.Format("2006-01-02 15:04:05.0000"))
+			fmt.Println("ticker transaction :", t.Format("2006-01-02 15:00:00.0000"))
 		}
 	}()
 	time.Sleep(time.Millisecond * 1600)
@@ -713,17 +759,15 @@ func doTask(id int, jobs <- chan int, results chan <-  int){
 func doWorkerPool(){
 	jobs := make(chan int , 100)
 	results := make(chan int, 100)
-	const NUM = 100
 
 	for i := 0; i < 3; i++ {
 		go doTask(i, jobs, results)
 	}
-	for j := 1; j < NUM; j++ {
+	for j := 1; j < 10; j++ {
 		jobs <- j
 	}
 	close(jobs)
-	//if you set the number 100, you will find the result is only one thread.
-	for a := 1; a < NUM; a++ {
+	for a := 1; a <= 9; a++ {
 		fmt.Println("result ", <-results)
 	}
 	//How to get the each job result.
@@ -1270,15 +1314,14 @@ func doJson(){
 	//time opr
 	doBasicTime()
 }
-
 func main() {
 	doSimple()
-	doConcurrent()
-	doTimer()
-	doSort()
-	doRegexp()
-	doJson()
-	playPigGame()
+	//doConcurrent()
+	//doTimer()
+	//doSort()
+	//doRegexp()
+	//doJson()
+	//playPigGame()
 }
 
 
