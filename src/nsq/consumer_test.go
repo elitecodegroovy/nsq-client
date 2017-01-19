@@ -57,7 +57,7 @@ func (h *MyTestHandler) HandleMessage(message *Message) error {
 
 func SendMessage(t *testing.T, port int, topic string, method string, body []byte) {
 	httpclient := &http.Client{}
-	endpoint := fmt.Sprintf("http://192.168.235.92:%d/%s?topic=%s", port, method, topic)
+	endpoint := fmt.Sprintf("http://10.50.115.16:%d/%s?topic=%s", port, method, topic)
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(body))
 	resp, err := httpclient.Do(req)
 	if err != nil {
@@ -145,7 +145,7 @@ func TestConsumerTLSClientCertViaSet(t *testing.T) {
 
 func consumerTest(t *testing.T, cb func(c *Config)) {
 	config := NewConfig()
-	laddr := "192.168.235.92"
+	laddr := "10.50.115.16"
 	// so that the test can simulate binding consumer to specified address
 	config.LocalAddr, _ = net.ResolveTCPAddr("tcp", laddr+":0")
 	// so that the test can simulate reaching max requeues and a call to LogFailedMessage
@@ -179,7 +179,7 @@ func consumerTest(t *testing.T, cb func(c *Config)) {
 	SendMessage(t, 4151, topicName, "put", []byte("TOBEFAILED"))
 	h.messagesSent = 4
 
-	addr := "192.168.235.92:4150"
+	addr := "10.50.115.16:4150"
 	err := q.ConnectToNSQD(addr)
 	if err != nil {
 		t.Fatal(err)

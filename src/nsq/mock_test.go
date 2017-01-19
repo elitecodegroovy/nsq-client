@@ -235,7 +235,7 @@ func TestConsumerBackoff(t *testing.T) {
 		instruction{200 * time.Millisecond, -1, []byte("exit")},
 	}
 
-	addr, _ := net.ResolveTCPAddr("tcp", "192.168.235.92:0")
+	addr, _ := net.ResolveTCPAddr("tcp", "10.50.115.16:0")
 	n := newMockNSQD(script, addr.String())
 
 	topicName := "test_consumer_commands" + strconv.Itoa(int(time.Now().Unix()))
@@ -307,7 +307,7 @@ func TestConsumerRequeueNoBackoff(t *testing.T) {
 		instruction{100 * time.Millisecond, -1, []byte("exit")},
 	}
 
-	addr, _ := net.ResolveTCPAddr("tcp", "192.168.235.92:0")
+	addr, _ := net.ResolveTCPAddr("tcp", "10.50.115.16:0")
 	n := newMockNSQD(script, addr.String())
 
 	topicName := "test_requeue" + strconv.Itoa(int(time.Now().Unix()))
@@ -377,7 +377,7 @@ func TestConsumerBackoffDisconnect(t *testing.T) {
 		instruction{100 * time.Millisecond, -1, []byte("exit")},
 	}
 
-	addr, _ := net.ResolveTCPAddr("tcp", "192.168.235.92:0")
+	addr, _ := net.ResolveTCPAddr("tcp", "10.50.115.16:0")
 	n := newMockNSQD(script, addr.String())
 
 	topicName := "test_requeue" + strconv.Itoa(int(time.Now().Unix()))

@@ -132,7 +132,7 @@ func consumerITest(t *testing.T, cb func(c *Config)) {
 	sendMessage(t, 4151, topicName, "put", []byte("TOBEFAILED"))
 	h.messagesSent = 4
 
-	addr := "192.168.235.92:4150"
+	addr := "10.50.115.16:4150"
 	err := q.ConnectToNSQD(addr)
 	if err != nil {
 		t.Fatal(err)
@@ -163,12 +163,13 @@ func consumerITest(t *testing.T, cb func(c *Config)) {
 
 func sendMessage(t *testing.T, port int, topic string, method string, body []byte) {
 	httpclient := &http.Client{}
-	endpoint := fmt.Sprintf("http://192.168.235.92:%d/%s?topic=%s", port, method, topic)
+	endpoint := fmt.Sprintf("http://10.50.115.16:%d/%s?topic=%s", port, method, topic)
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(body))
 	resp, err := httpclient.Do(req)
 	if err != nil {
 		t.Fatalf(err.Error())
 		return
 	}
+	fmt.Println("resp: ", resp)
 	resp.Body.Close()
 }

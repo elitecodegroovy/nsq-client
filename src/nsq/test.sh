@@ -21,9 +21,9 @@ LOOKUPD_PID=$!
 # run nsqd configured to use our lookupd above
 rm -f *.dat
 NSQD_LOGFILE=$(mktemp -t nsqlookupd.XXXXXXX)
-echo "starting nsqd --data-path=/tmp --lookupd-tcp-address=192.168.235.92:4160 --tls-cert=./test/server.pem --tls-key=./test/server.key --tls-root-ca-file=./test/ca.pem"
+echo "starting nsqd --data-path=/tmp --lookupd-tcp-address=10.50.115.16:4160 --tls-cert=./test/server.pem --tls-key=./test/server.key --tls-root-ca-file=./test/ca.pem"
 echo "  logging to $NSQD_LOGFILE"
-nsqd --data-path=/tmp --lookupd-tcp-address=192.168.235.92:4160 --tls-cert=./test/server.pem --tls-key=./test/server.key --tls-root-ca-file=./test/ca.pem >$NSQD_LOGFILE 2>&1 &
+nsqd --data-path=/tmp --lookupd-tcp-address=10.50.115.16:4160 --tls-cert=./test/server.pem --tls-key=./test/server.key --tls-root-ca-file=./test/ca.pem >$NSQD_LOGFILE 2>&1 &
 NSQD_PID=$!
 
 sleep 0.3

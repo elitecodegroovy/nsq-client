@@ -1,3 +1,3 @@
 package nsq
 
-const addr string =  "192.168.235.92:4150"
+const addr string =  "10.50.115.16:4150"

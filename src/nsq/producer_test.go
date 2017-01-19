@@ -42,14 +42,11 @@ func (h *ConsumerHandler) HandleMessage(message *Message) error {
 
 func TestProducerConnection(t *testing.T) {
 	config := NewConfig()
-	//laddr := "192.168.235.92"
-	//
-	//config.LocalAddr, _ = net.ResolveTCPAddr("tcp", laddr+":0")
 
-	w, _ := NewProducer("192.168.235.92:4150", config)
+	w, _ := NewProducer("10.50.115.16:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 
-	err := w.Publish("write_test", []byte("test"))
+	err := w.Publish("req-test", []byte("test"))
 	if err != nil {
 		t.Fatalf("should lazily connect - %s", err)
 	}
@@ -67,7 +64,7 @@ func TestProducerPing(t *testing.T) {
 	defer log.SetOutput(os.Stdout)
 
 	config := NewConfig()
-	w, _ := NewProducer("192.168.235.92:4150", config)
+	w, _ := NewProducer("10.50.115.16:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 
 	err := w.Ping()
@@ -93,7 +90,8 @@ func TestProducerPublish(t *testing.T) {
 	msgCount := 10
 
 	config := NewConfig()
-	w, _ := NewProducer("192.168.235.92:4150", config)
+	//
+	w, _ := NewProducer("10.50.115.16:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 	defer w.Stop()
 
@@ -120,7 +118,7 @@ func TestProducerMultiPublish(t *testing.T) {
 	msgCount := 10
 
 	config := NewConfig()
-	w, _ := NewProducer("192.168.235.92:4150", config)
+	w, _ := NewProducer("10.50.115.16:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 	defer w.Stop()
 
@@ -150,7 +148,7 @@ func TestProducerPublishAsync(t *testing.T) {
 	msgCount := 10
 
 	config := NewConfig()
-	w, _ := NewProducer("192.168.235.92:4150", config)
+	w, _ := NewProducer("10.50.115.16:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 	defer w.Stop()
 
@@ -188,7 +186,7 @@ func TestProducerMultiPublishAsync(t *testing.T) {
 	msgCount := 10
 
 	config := NewConfig()
-	w, _ := NewProducer("192.168.235.92:4150", config)
+	w, _ := NewProducer("10.50.115.16:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 	defer w.Stop()
 
@@ -230,7 +228,7 @@ func TestProducerHeartbeat(t *testing.T) {
 
 	config := NewConfig()
 	config.HeartbeatInterval = 100 * time.Millisecond
-	w, _ := NewProducer("192.168.235.92:4150", config)
+	w, _ := NewProducer("10.50.115.16:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 	defer w.Stop()
 
@@ -246,7 +244,7 @@ func TestProducerHeartbeat(t *testing.T) {
 	//HeartbeatInterval config
 	config = NewConfig()
 	config.HeartbeatInterval = 1000 * time.Millisecond
-	w, _ = NewProducer("192.168.235.92:4150", config)
+	w, _ = NewProducer("10.50.115.16:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 	defer w.Stop()
 
@@ -287,7 +285,7 @@ func readMessages(topicName string, t *testing.T, msgCount int) {
 	}
 	q.AddHandler(h)
 
-	err := q.ConnectToNSQD("192.168.235.92:4150")
+	err := q.ConnectToNSQD("10.50.115.16:4150")
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -321,7 +319,7 @@ func newMockProducerConn(delegate ConnDelegate) producerConn {
 }
 
 func (m *mockProducerConn) String() string {
-	return "192.168.235.92:0"
+	return "10.50.115.16:0"
 }
 
 func (m *mockProducerConn) SetLogger(logger logger, level LogLevel, prefix string) {}
@@ -359,7 +357,7 @@ func BenchmarkProducer(b *testing.B) {
 	body := make([]byte, 512)
 
 	config := NewConfig()
-	p, _ := NewProducer("192.168.235.92:0", config)
+	p, _ := NewProducer("10.50.115.16:0", config)
 
 	p.conn = newMockProducerConn(&producerConnDelegate{p})
 	atomic.StoreInt32(&p.state, StateConnected)
@@ -384,4 +382,21 @@ func BenchmarkProducer(b *testing.B) {
 	b.StartTimer()
 	close(startCh)
 	wg.Wait()
+}
+
+func TestSimpleProducer(t *testing.T){
+	//init default config
+	config := NewConfig()
+
+	w, _ := NewProducer("10.50.115.16:4150", config)
+	w.SetLogger(nullLogger, LogLevelInfo)
+
+	err := w.Publish("req-test", []byte("test"))
+	if err != nil {
+		panic("should lazily connect - %s")
+	}
+
+	w.Stop()
+
+	err = w.Publish("req_test", []byte("fail test"))
 }

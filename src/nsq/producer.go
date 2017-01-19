@@ -231,6 +231,7 @@ func (w *Producer) sendCommandAsync(cmd *Command, doneChan chan *ProducerTransac
 	args []interface{}) error {
 	// keep track of how many outstanding producers we're dealing with
 	// in order to later ensure that we clean them all up...
+	log.Println("w.currentProducer:" , w.concurrentProducers)
 	atomic.AddInt32(&w.concurrentProducers, 1)
 	defer atomic.AddInt32(&w.concurrentProducers, -1)
 
