@@ -1347,6 +1347,7 @@ func grep(re, filename string) error {
 	}
 	return nil
 }
+
 func main() {
 	//doSimple()
 	//doConcurrent()
