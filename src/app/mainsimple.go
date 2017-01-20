@@ -16,6 +16,8 @@ import (
 	"regexp"
 	"encoding/json"
 	"bytes"
+	"bufio"
+	"flag"
 )
 const (
 	win            = 100 // The winning score in a game of Pig
@@ -1314,14 +1316,55 @@ func doJson(){
 	//time opr
 	doBasicTime()
 }
+
+func grep(re, filename string) error {
+	regex, err := regexp.Compile(re)
+	if err != nil {
+		return  err// there was a problem with the regular expression.
+	}
+
+	fh, err := os.Open(filename)
+	f := bufio.NewReader(fh)
+
+	if err != nil {
+		return err // there was a problem opening the file.
+	}
+	defer fh.Close()
+
+	buf := make([]byte, 1024)
+	for {
+		buf, _ , err = f.ReadLine()
+		if err != nil && err.Error() == "EOF" {
+			return nil
+		}else if err != nil && err.Error() != "EOF" {
+			return err
+		}
+
+		s := string(buf)
+		if regex.MatchString(s) {
+			fmt.Printf("%s\n", string(buf))
+		}
+	}
+	return nil
+}
 func main() {
-	doSimple()
-	doConcurrent()
-	doTimer()
-	doSort()
-	doRegexp()
-	doJson()
-	playPigGame()
+	//doSimple()
+	//doConcurrent()
+	//doTimer()
+	//doSort()
+	//doRegexp()
+	//doJson()
+	//playPigGame()
+	flag.Parse()
+	if flag.NArg() == 2 {
+		err := grep(flag.Arg(0), flag.Arg(1))
+		if err != nil  {
+			fmt.Println(err)
+		}
+	} else {
+		fmt.Printf("Wrong number of arguments. arg1 file name\n")
+	}
+
 }
 
 
