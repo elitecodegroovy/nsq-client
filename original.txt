@@ -1,0 +1,5 @@
+ this is a text file that contains couple of replaceme words that need to be replaced.
+ for example, a replaceme word in this line
+
+
+ and another [replaceme] word in this line too

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"bufio"
 	"flag"
+	"io/ioutil"
 )
 const (
 	win            = 100 // The winning score in a game of Pig
@@ -1346,6 +1347,22 @@ func grep(re, filename string) error {
 		}
 	}
 	return nil
+}
+
+func replace(){
+	input, err := ioutil.ReadFile("original.txt")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	output := bytes.Replace(input, []byte("replaceme"), []byte("ok"), -1)
+
+	if err = ioutil.WriteFile("modified.txt", output, 0666); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 }
 
 func main() {
