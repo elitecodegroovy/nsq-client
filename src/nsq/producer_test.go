@@ -39,7 +39,7 @@ func (h *ConsumerHandler) HandleMessage(message *Message) error {
 	h.messagesGood++
 	return nil
 }
-
+//simple test case
 func TestProducerConnection(t *testing.T) {
 	config := NewConfig()
 
@@ -54,11 +54,13 @@ func TestProducerConnection(t *testing.T) {
 	w.Stop()
 
 	err = w.Publish("write_test", []byte("fail test"))
-	if err != ErrStopped {
-		t.Fatalf("should not be able to write after Stop()")
+	fmt.Println("error", err)
+	if err != nil {
+		t.Fatalf("should not be able to write after Stop()", err)
 	}
 }
 
+//ping feature
 func TestProducerPing(t *testing.T) {
 	log.SetOutput(ioutil.Discard)
 	defer log.SetOutput(os.Stdout)
@@ -67,6 +69,7 @@ func TestProducerPing(t *testing.T) {
 	w, _ := NewProducer("10.50.115.16:4150", config)
 	w.SetLogger(nullLogger, LogLevelInfo)
 
+	//TODO .... how to call WriteCommand method[interface]
 	err := w.Ping()
 
 	if err != nil {
@@ -96,7 +99,7 @@ func TestProducerPublish(t *testing.T) {
 	defer w.Stop()
 
 	for i := 0; i < msgCount; i++ {
-		err := w.Publish(topicName, []byte("publish_test_case"))
+		err := w.Publish(topicName, []byte("publish_test_case" + i))
 		if err != nil {
 			t.Fatalf("error %s", err)
 		}

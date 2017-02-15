@@ -17,8 +17,8 @@ import (
 	"encoding/json"
 	"bytes"
 	"bufio"
-	"flag"
 	"io/ioutil"
+	"flag"
 )
 const (
 	win            = 100 // The winning score in a game of Pig
@@ -1349,22 +1349,50 @@ func grep(re, filename string) error {
 	return nil
 }
 
-func replace(){
-	input, err := ioutil.ReadFile("original.txt")
+func replace(fileName string , re string, replaceTxt string , newFile string) error{
+	input, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 
-	output := bytes.Replace(input, []byte("replaceme"), []byte("ok"), -1)
+	output := bytes.Replace(input, []byte(re), []byte( replaceTxt), -1)
 
-	if err = ioutil.WriteFile("modified.txt", output, 0666); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	if err = ioutil.WriteFile(newFile, output, 0666); err != nil {
+		return err
 	}
-
+	return nil
 }
 
+func rexexpExample(){
+	flag.Parse()
+	if flag.NArg() == 2 {
+		err := grep(flag.Arg(0), flag.Arg(1))
+		if err != nil  {
+			fmt.Println(err)
+		}
+	} else if flag.NArg() == 4 {
+		//replace("mainsimple.go", "--", "*", "mainsimpel-updated.go")
+		err := replace(flag.Arg(0), flag.Arg(1), flag.Arg(2), flag.Arg(3))
+		if err != nil {
+			fmt.Println(err)
+		}
+	} else if flag.NArg() == 3 {
+		err := replace(flag.Arg(0), flag.Arg(1), flag.Arg(2), flag.Arg(0))
+		if err != nil {
+			fmt.Println(err)
+		}
+	} else {
+		fmt.Printf("Wrong number of arguments. arg1 file name\n")
+	}
+}
+
+/**
+	fmt.Println("*******-args desc***********")
+	fmt.Println("args : args == 2 , arg 1: full file path, arg 2: search regexp content")
+	fmt.Println("args : args == 4 , arg 1: full file path, arg 2: search regexp content \n "+
+	                                          " args 3: replace content, args 4 :  new file name")
+	fmt.Println("***********************")
+ */
 func main() {
 	//doSimple()
 	//doConcurrent()
@@ -1373,16 +1401,7 @@ func main() {
 	//doRegexp()
 	//doJson()
 	//playPigGame()
-	flag.Parse()
-	if flag.NArg() == 2 {
-		err := grep(flag.Arg(0), flag.Arg(1))
-		if err != nil  {
-			fmt.Println(err)
-		}
-	} else {
-		fmt.Printf("Wrong number of arguments. arg1 file name\n")
-	}
-
+	rexexpExample()
 }
 
 
