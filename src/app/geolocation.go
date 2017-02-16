@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type GeoIP struct {
@@ -45,6 +46,10 @@ var (
 )
 
 func showIpInfo(ip string) IpInfo {
+	go func(){
+		time.Sleep(time.Second * 1)
+	}()
+
 	response, err = http.Get("http://int.dpool.sina.com.cn/iplookup/iplookup.php?format=json&ip=" + ip)
 	if err != nil {
 		fmt.Println(err)
