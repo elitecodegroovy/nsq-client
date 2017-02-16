@@ -56,6 +56,8 @@ func fibonacci(c, quit chan int) {
 func exeFibonacci(){
 	c := make(chan int)
 	quit := make(chan int)
+	s := strconv.Quote(`"Fran & Freddie's Diner	☺"`)
+	fmt.Println(s)
 
 	//produce data
 	go func(){
