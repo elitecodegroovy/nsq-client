@@ -20,10 +20,10 @@ import (
 	"time"
 
 	"github.com/nsqio/go-nsq"
-	"github.com/nsqio/nsq/internal/app"
-	"github.com/nsqio/nsq/internal/clusterinfo"
-	"github.com/nsqio/nsq/internal/http_api"
-	"github.com/nsqio/nsq/internal/version"
+	"internal/app"
+	"internal/clusterinfo"
+	"internal/http_api"
+	"internal/version"
 )
 
 var (

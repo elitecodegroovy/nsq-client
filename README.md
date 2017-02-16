@@ -15,7 +15,7 @@ Tests are run via `./test.sh` (which requires `nsqd` and `nsqlookupd` to be inst
 
 [nsq]: https://github.com/nsqio/nsq
 [nsq_gopkgdoc]: http://godoc.org/github.com/nsqio/go-nsq
-[apps]: https://github.com/nsqio/nsq/tree/master/apps
+[apps]: https://tree/master/apps
 [travis]: http://travis-ci.org/nsqio/go-nsq
 
 [test] go test -v -cover -bench .

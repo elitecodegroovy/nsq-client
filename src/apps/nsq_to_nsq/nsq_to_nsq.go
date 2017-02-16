@@ -20,9 +20,9 @@ import (
 	"github.com/bitly/go-simplejson"
 	"github.com/bitly/timer_metrics"
 	"github.com/nsqio/go-nsq"
-	"github.com/nsqio/nsq/internal/app"
-	"github.com/nsqio/nsq/internal/protocol"
-	"github.com/nsqio/nsq/internal/version"
+	"internal/app"
+	"internal/protocol"
+	"internal/version"
 )
 
 const (

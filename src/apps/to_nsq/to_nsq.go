@@ -14,8 +14,8 @@ import (
 	"syscall"
 
 	"github.com/nsqio/go-nsq"
-	"github.com/nsqio/nsq/internal/app"
-	"github.com/nsqio/nsq/internal/version"
+	"internal/app"
+	"internal/version"
 )
 
 var (

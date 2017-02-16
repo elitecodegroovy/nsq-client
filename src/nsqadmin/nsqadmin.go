@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nsqio/nsq/internal/http_api"
-	"github.com/nsqio/nsq/internal/util"
-	"github.com/nsqio/nsq/internal/version"
+	"internal/http_api"
+	"internal/util"
+	"internal/version"
 )
 
 type NSQAdmin struct {
